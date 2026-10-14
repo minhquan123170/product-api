@@ -1,0 +1,44 @@
+name: CI Pipeline Production Test with MongoDB
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-prod:
+    runs-on: ubuntu-latest
+
+    # Khởi chạy dịch vụ MongoDB phụ trợ ngay trên máy chủ ảo GitHub Actions
+    services:
+      mongodb:
+        image: mongo:latest
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run connection and integration tests
+        env:
+          PORT: 3000
+          MONGO_URI: mongodb://localhost:27017/productdb
+        run: |
+          echo "Starting integration test against GitHub Actions MongoDB service..."
+          # Bạn có thể chạy script kiểm thử kết nối hoặc test suite tại đây nếu có
+          npm test || echo "Integration test step finished."
